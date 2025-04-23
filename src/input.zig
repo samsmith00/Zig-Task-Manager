@@ -12,14 +12,13 @@ const stdout = std.io.getStdOut().writer();
 /// Make a note struct that has a note id and content
 /// hace a dynamic array that holds all of the notes this will be easy to delete and add to
 /// Need to make numbers reset when cleared, and right now black returns are considered notes, need to fix that
-
 pub fn handle_input(allocator: std.mem.Allocator, note_list: *std.ArrayList(Notes)) !void {
     const stdin = std.io.getStdIn().reader();
     var note_count: u32 = 1;
 
     var arg_set = try arg_set_path.set(allocator);
     defer arg_set.deinit();
-    
+
     outer: while (true) {
         const input_buff = try stdin.readUntilDelimiterAlloc(allocator, '\n', 512);
         defer allocator.free(input_buff);
@@ -30,15 +29,12 @@ pub fn handle_input(allocator: std.mem.Allocator, note_list: *std.ArrayList(Note
         const content = try remove_args(allocator, input_buff, arg_set);
 
         if (content.len > 0 or args.items.len > 0) {
-           if (content.len > 0) { 
+            if (content.len > 0) {
                 const new_note = Notes.init(note_count, content, allocator);
                 _ = try note_list.append(new_note);
                 //try display_notes(note_list);
             }
-        
 
-
-            // -show not working, try to print out args again
             note_count += 1;
             for (args.items) |arg| {
                 //try stdout.print("{s}", .{arg});
@@ -46,12 +42,13 @@ pub fn handle_input(allocator: std.mem.Allocator, note_list: *std.ArrayList(Note
                     break :outer;
                 } else if (std.mem.eql(u8, arg, "-show")) {
                     try write_to_file(note_list);
-                    const file = try std.fs.cwd().openFile("notes.txt", .{.mode = .read_only});
+                    const file = try std.fs.cwd().openFile("notes.txt", .{ .mode = .read_only });
                     defer file.close();
                     try display_file(file, allocator);
                 } else if (std.mem.eql(u8, arg, "-clear")) {
                     try std.fs.cwd().deleteFile("notes.txt");
                     note_list.clearRetainingCapacity();
+                    note_count = 0;
                     //try stdout.print("{s}", .{"Deleated notes"});
                 }
             }
@@ -60,12 +57,12 @@ pub fn handle_input(allocator: std.mem.Allocator, note_list: *std.ArrayList(Note
 }
 
 // will be used right before note is added to the note_list, NEEDO TO APPEND NEW LINE TO END OF EACH NOTE GOING INTO THE CONTENT
-fn remove_args(allocator: std.mem.Allocator ,input: []const u8, arg_set: std.BufSet) ![]const u8 {
+fn remove_args(allocator: std.mem.Allocator, input: []const u8, arg_set: std.BufSet) ![]const u8 {
     const note_copy = try allocator.dupe(u8, input);
     var split_iter = std.mem.tokenizeScalar(u8, note_copy, ' ');
 
     var buff = std.ArrayList(u8).init(allocator);
-    
+
     while (split_iter.next()) |word| {
         if (!arg_set.contains(word)) {
             try buff.appendSlice(word);
@@ -79,14 +76,14 @@ fn remove_args(allocator: std.mem.Allocator ,input: []const u8, arg_set: std.Buf
     }
 
     const string_to_add = try buff.toOwnedSlice();
-    
+
     return string_to_add;
 }
 
 fn display_file(file: std.fs.File, allocator: std.mem.Allocator) !void {
     const file_size = try file.getEndPos();
 
-    const bytes_read = try allocator.alloc( u8, file_size);
+    const bytes_read = try allocator.alloc(u8, file_size);
     defer allocator.free(bytes_read);
 
     try file.seekTo(0);
@@ -96,7 +93,7 @@ fn display_file(file: std.fs.File, allocator: std.mem.Allocator) !void {
 
 fn display_notes(input: *std.ArrayList(Notes)) !void {
     for (input.items) |note| {
-       try note._display();
+        try note._display();
     }
 }
 

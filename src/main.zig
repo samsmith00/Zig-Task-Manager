@@ -11,7 +11,6 @@ const stdout = std.io.getStdOut().writer();
 ///     3. delete individual tasks
 ///     4.
 ///
-///
 pub const Notes = struct {
     id: u32,
     content: []const u8,
@@ -26,9 +25,10 @@ pub const Notes = struct {
         try stdout.print("{s}", .{self.content});
     }
 
-    pub fn _format_for_file(self: Notes) ![] u8 {
+    pub fn _format_for_file(self: Notes) ![]u8 {
         const id_as_str = try std.fmt.allocPrint(self.allocator, "{d}", .{self.id});
         var message_builder = std.ArrayList(u8).init(self.allocator);
+        defer message_builder.deinit();
         try message_builder.appendSlice(id_as_str);
         try message_builder.appendSlice(". ");
         try message_builder.appendSlice(self.content);
@@ -42,14 +42,9 @@ pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     const allocator = gpa.allocator();
 
-    // TRYING TO SEE IF JUST INITIALIZING FILE IN HANDLE INPUT IS
-    
     var note_list = std.ArrayList(Notes).init(allocator);
 
-    defer {
-        //file.close();
-        note_list.deinit();
-    }
+    defer note_list.deinit();
 
     try banner.run_banner();
     try handle_input.handle_input(allocator, &note_list);

@@ -3,25 +3,22 @@ const stdout = std.io.getStdOut().writer();
 
 pub fn notes_txt_init() !std.fs.File {
     const cwd = std.fs.cwd();
-    var file =  cwd.openFile("notes.txt", .{
-        .mode = .read_write,
-    }) catch |err| {
-        if (err == error.FileNotFound) {
-            return cwd.createFile("notes.txt", .{ .read = true, });
-        } else {
-            return err;
-        }
-    };
+    const file = try cwd.createFile("notes.txt", 
+    .{.read = true, .truncate = true
+    });
 
-    const file_size = try file.getEndPos();
-    try stdout.print("{d}", .{file_size});
-    if (file_size == 0) {
-        var i: usize = 0;
-        while (i < 30) {
-            try file.writeAll("-");
-            i += 1;
+    var i: usize = 0;
+    while (i < 30) {
+        if (i % 2 == 0) {
+            try file.writeAll("/");
         }
+        else {
+            try file.writeAll("\\");
+        }
+        i += 1;
     }
-
+    try file.writeAll("\n");
     return file;
 }
+
+

@@ -26,6 +26,8 @@ pub fn handle_input(allocator: std.mem.Allocator, note_list: *std.ArrayList(Note
         const args = try parse_input.parse_input(allocator, input_buff);
         defer args.deinit();
 
+        const args_subset = try arg_set_path.create_subset(allocator, args);
+
         const content = try remove_args(allocator, input_buff, arg_set);
 
         if (content.len > 0 or args.items.len > 0) {
@@ -48,11 +50,15 @@ pub fn handle_input(allocator: std.mem.Allocator, note_list: *std.ArrayList(Note
                     note_count = 0;
                     //try stdout.print("{s}", .{"Deleated notes"});
                 } else if (std.mem.eql(u8, arg, "-x")) {
-                    continue;
+                    var target = content;
+                    target = std.mem.trimRight(u8, target, "\n\r");
+                    _ = try mark_task_as_done(note_list, target);
+                    try stdout.print("marked as done", .{});
                 }
             }
-            if (content.len > 0) {
-                const new_note = Notes.init(note_count, content, allocator, false);
+            const is_removed = if (args_subset.contains("-x")) true else false;
+            if (content.len > 0 and !is_removed) {
+                const new_note = try Notes.init(note_count, content, allocator, false);
                 _ = try note_list.append(new_note);
                 //try display_notes(note_list);
             }
@@ -93,7 +99,7 @@ fn display_file(file: std.fs.File, allocator: std.mem.Allocator) !void {
 
     try file.seekTo(0);
     _ = try file.readAll(bytes_read);
-    try stdout.print("{s}", .{bytes_read});
+   try stdout.print("{s}", .{bytes_read});
 }
 
 fn display_notes(input: *std.ArrayList(Notes)) !void {
@@ -114,14 +120,28 @@ fn write_to_file(note_list: *std.ArrayList(Notes)) !void {
 }
 
 fn print_divider() !void {
-     var i: usize = 0;
+    var i: usize = 0;
     while (i < 30) {
         if (i % 2 == 0) {
-            try stdout.print("/", .{});
+            try stdout.print("\x1b[38;5;208m/\x1b[0m", .{});
         } else {
-            try stdout.print("\\", .{});
+            try stdout.print("\x1b[38;5;208m\\\x1b[0m", .{});
         }
         i += 1;
     }
     try stdout.print("\n", .{});
 }
+
+fn mark_task_as_done(input: *std.ArrayList(Notes), target: []const u8) !void {
+    try stdout.print("entere marked done func", .{});
+    for (input.items) |*note| {
+        if (std.mem.eql(u8, target, note.str_id)) {
+            note.change_status(true);
+            try note._display();
+        }
+    }
+    try write_to_file(input);
+    try stdout.print("exit marked done func", .{});
+}
+
+// Need to figure out how to grap number, ignore the .

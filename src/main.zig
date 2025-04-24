@@ -16,26 +16,40 @@ const stdout = std.io.getStdOut().writer();
 ///
 pub const Notes = struct {
     id: u32,
+    str_id: []const u8,
     content: []const u8,
     allocator: std.mem.Allocator,
     status: bool,
 
-    pub fn init(num: u32, str: []const u8, allocator: std.mem.Allocator, is_complete: bool) Notes {
-        return Notes{ .id = num, .content = str, .allocator = allocator, .status = is_complete};
+    pub fn init(num: u32, str: []const u8, allocator: std.mem.Allocator, is_complete: bool) !Notes {
+        const str_id = try std.fmt.allocPrint(allocator, "{d}", .{num});
+        return Notes{
+            .id = num,
+            .str_id = str_id,
+            .content = str,
+            .allocator = allocator,
+            .status = is_complete
+        };
     }
 
-    pub fn _display(self: Notes) !void {
+    // fn init_strID(self: *Notes) !void {
+    //     self.str_id = try std.fmt.allocPrint(self.allocator , "{d}", .{self.id});
+    // }
+
+    // For debugging 
+    pub fn _display(self: *Notes) !void {
         try stdout.print("{d}. ", .{self.id});
-        try stdout.print("{s}", .{self.content});
+        try stdout.print("{s} ", .{self.content});
+        try stdout.print("{s}", .{if (self.status) "true" else "false"});
     }
 
     pub fn _format_for_file(self: Notes) ![]u8 {
-        const id_as_str = try std.fmt.allocPrint(self.allocator, "{d}", .{self.id});
+        //const id_as_str = try std.fmt.allocPrint(self.allocator, "{d}", .{self.id});
         var message_builder = std.ArrayList(u8).init(self.allocator);
         defer message_builder.deinit();
 
         const status = if (self.status) "[X] " else "[ ] ";
-        try message_builder.appendSlice(id_as_str);
+        try message_builder.appendSlice(self.str_id);
         try message_builder.appendSlice(". ");
         try message_builder.appendSlice(status);
         try message_builder.appendSlice(" ");
@@ -43,6 +57,10 @@ pub const Notes = struct {
 
         const message = try message_builder.toOwnedSlice();
         return message;
+    }
+
+    pub fn change_status(self: *Notes, status: bool) void {
+        self.status = status;
     }
 };
 

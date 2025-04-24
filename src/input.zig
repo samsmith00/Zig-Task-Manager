@@ -30,11 +30,12 @@ pub fn handle_input(allocator: std.mem.Allocator, note_list: *std.ArrayList(Note
 
         if (content.len > 0 or args.items.len > 0) {
             if (content.len > 0) {
-                const new_note = Notes.init(note_count, content, allocator);
+                const new_note = Notes.init(note_count, content, allocator, false);
                 _ = try note_list.append(new_note);
                 //try display_notes(note_list);
             }
 
+            // have to rework this because now file is being passed from main func
             note_count += 1;
             for (args.items) |arg| {
                 //try stdout.print("{s}", .{arg});
@@ -42,9 +43,10 @@ pub fn handle_input(allocator: std.mem.Allocator, note_list: *std.ArrayList(Note
                     break :outer;
                 } else if (std.mem.eql(u8, arg, "-show")) {
                     try write_to_file(note_list);
-                    const file = try std.fs.cwd().openFile("notes.txt", .{ .mode = .read_only });
-                    defer file.close();
-                    try display_file(file, allocator);
+                    const show_file = try std.fs.cwd().openFile("notes.txt", .{ .mode = .read_only });
+                    defer show_file.close();
+                    try print_divider();
+                    try display_file(show_file, allocator);
                 } else if (std.mem.eql(u8, arg, "-clear")) {
                     try std.fs.cwd().deleteFile("notes.txt");
                     note_list.clearRetainingCapacity();
@@ -106,4 +108,17 @@ fn write_to_file(note_list: *std.ArrayList(Notes)) !void {
         try file.writeAll(str);
         defer note.allocator.free(str);
     }
+}
+
+fn print_divider() !void {
+     var i: usize = 0;
+    while (i < 30) {
+        if (i % 2 == 0) {
+            try stdout.print("/", .{});
+        } else {
+            try stdout.print("\\", .{});
+        }
+        i += 1;
+    }
+    try stdout.print("\n", .{});
 }

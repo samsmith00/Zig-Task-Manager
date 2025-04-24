@@ -29,14 +29,9 @@ pub fn handle_input(allocator: std.mem.Allocator, note_list: *std.ArrayList(Note
         const content = try remove_args(allocator, input_buff, arg_set);
 
         if (content.len > 0 or args.items.len > 0) {
-            if (content.len > 0) {
-                const new_note = Notes.init(note_count, content, allocator, false);
-                _ = try note_list.append(new_note);
-                //try display_notes(note_list);
-            }
+        
 
             // have to rework this because now file is being passed from main func
-            note_count += 1;
             for (args.items) |arg| {
                 //try stdout.print("{s}", .{arg});
                 if (std.mem.eql(u8, arg, "-done")) {
@@ -52,8 +47,16 @@ pub fn handle_input(allocator: std.mem.Allocator, note_list: *std.ArrayList(Note
                     note_list.clearRetainingCapacity();
                     note_count = 0;
                     //try stdout.print("{s}", .{"Deleated notes"});
+                } else if (std.mem.eql(u8, arg, "-x")) {
+                    continue;
                 }
             }
+            if (content.len > 0) {
+                const new_note = Notes.init(note_count, content, allocator, false);
+                _ = try note_list.append(new_note);
+                //try display_notes(note_list);
+            }
+            note_count += 1;
         }
     }
 }

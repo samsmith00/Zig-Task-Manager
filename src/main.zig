@@ -30,14 +30,15 @@ pub const Notes = struct {
     }
 
     pub fn _format_for_file(self: Notes) ![]u8 {
-        // only use id_as_str if you want numbers for notes insted of checkboxes
-        //const id_as_str = try std.fmt.allocPrint(self.allocator, "{d}", .{self.id});
+        const id_as_str = try std.fmt.allocPrint(self.allocator, "{d}", .{self.id});
         var message_builder = std.ArrayList(u8).init(self.allocator);
         defer message_builder.deinit();
 
         const status = if (self.status) "[X] " else "[ ] ";
+        try message_builder.appendSlice(id_as_str);
+        try message_builder.appendSlice(". ");
         try message_builder.appendSlice(status);
-        //try message_builder.appendSlice(". ");
+        try message_builder.appendSlice(" ");
         try message_builder.appendSlice(self.content);
 
         const message = try message_builder.toOwnedSlice();

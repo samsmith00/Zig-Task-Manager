@@ -18,7 +18,7 @@ pub fn run_banner() !void {
     const ansi_reset_orange = "\x1B[0m";
     try stdout.print("{s}{s}{s}", .{ansi_deep_orange, result.stdout, ansi_reset_orange});
 
-    const commands = "CMDS: * (add) | -done | -del | -clear | -show | -p \n";
+    const commands = "CMDS: * (add) | -done | -del | -clear | -show | -p | -x \n";
     try std.io.getStdOut().writer().print("{s}{s}{s}", .{ansi_blue, commands, ansi_reset_blue});
     std.debug.print("\n", .{});
 }

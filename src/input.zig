@@ -158,7 +158,7 @@ fn print_divider() !void {
     try stdout.print("\n", .{});
 }
 
-// Checks off the note that the user has marked as done
+// Checks off the  that the user has marked as done
 fn mark_task_as_done(input: *std.ArrayList(Notes), target: []const u8) !void {
     for (input.items) |*note| {
         if (std.mem.eql(u8, target, note.str_id)) {

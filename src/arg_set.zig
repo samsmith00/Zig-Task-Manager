@@ -1,3 +1,7 @@
+/// Creates a set with all the args the user might input
+/// This way we are able to determine which args the user uses
+/// Can also create a subset which are exatly the args the user is using, does not contain all the args
+
 const std = @import("std");
 const stdout = std.io.getStdOut().writer();
 

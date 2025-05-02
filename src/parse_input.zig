@@ -7,13 +7,16 @@ const stdout = std.io.getStdOut().writer();
 const arg_set_path = @import("arg_set.zig");
 
 pub fn parse_input(allocator: std.mem.Allocator, input: []const u8) !std.ArrayList([]const u8) {
+    // Get our set of args that the user could use
     var arg_set = try arg_set_path.set(allocator);
     defer arg_set.deinit();
 
+    // Break down the input (what the user typed into the terminal) into individual words
     var tokens = std.mem.tokenizeScalar(u8, input, ' ');
 
     var arg_list = std.ArrayList([]const u8).init(allocator);
 
+    // loop through the tokens and get all the args
     while (tokens.next()) |arg| {
         if (arg_set.contains(arg)) {
             //try stdout.print("match, contains {s}\n", .{arg});

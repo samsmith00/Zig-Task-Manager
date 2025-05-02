@@ -2,8 +2,6 @@
 /// Breaks extracts the keywords (args)
 /// Checks which args the user used and preforms various actions based on what args are used
 /// Creates note structs and adds them to the note_list, which is a dynamic array that holds the note structs
-
-
 const std = @import("std");
 const parse_input = @import("parse_input.zig");
 const arg_set_path = @import("arg_set.zig");
@@ -25,7 +23,7 @@ pub fn handle_input(allocator: std.mem.Allocator, note_list: *std.ArrayList(Note
     var arg_set = try arg_set_path.set(allocator);
     defer arg_set.deinit();
 
-    // Loop that continuously accepts user input until -done keyword is used. Gave loop a label so we can directly break the loop 
+    // Loop that continuously accepts user input until -done keyword is used. Gave loop a label so we can directly break the loop
     outer: while (true) {
         // getting the user input
         const input_buff = try stdin.readUntilDelimiterAlloc(allocator, '\n', 512);
@@ -42,8 +40,8 @@ pub fn handle_input(allocator: std.mem.Allocator, note_list: *std.ArrayList(Note
         const content = try remove_args(allocator, input_buff, arg_set);
 
         if (content.len > 0 or args.items.len > 0) {
-            
-            // Loop to preform various actions based on the args 
+
+            // Loop to preform various actions based on the args
             // have to rework this because now file is being passed from main func
             for (args.items) |arg| {
                 if (std.mem.eql(u8, arg, "-done")) {
@@ -66,15 +64,8 @@ pub fn handle_input(allocator: std.mem.Allocator, note_list: *std.ArrayList(Note
                 } else if (std.mem.eql(u8, arg, "-del")) {
                     var target = content;
                     target = std.mem.trimRight(u8, target, "\n\r");
-                    // Debugging
-                    try stdout.print("Note before removing: ", .{});
-                    try display_notes(note_list);
-                    try stdout.print("\nTarget: ", .{});
-                    try stdout.print("{s}\n", .{target});
-                    try stdout.print("After removing\n", .{});
                     try delet_specific_task(note_list, target);
                     try write_to_file(note_list, 'Y');
-                    try display_notes(note_list);
                 }
             }
             // Making sure we do not add content to notes if it pertains to deleting or checking off notes
@@ -133,10 +124,8 @@ fn display_notes(input: *std.ArrayList(Notes)) !void {
 
 // Function to write the notes stored in note_list to a text file.
 fn write_to_file(note_list: *std.ArrayList(Notes), should_truncate: u8) !void {
-
     if (should_truncate == 'Y') {
-        var file = try std.fs.cwd().createFile("notes.txt", 
-        .{.truncate = true});
+        var file = try std.fs.cwd().createFile("notes.txt", .{ .truncate = true });
         defer file.close();
         for (note_list.items) |note| {
             const str = try note._format_for_file();
@@ -189,5 +178,5 @@ fn delet_specific_task(input: *std.ArrayList(Notes), target: []const u8) !void {
         if (std.mem.eql(u8, input.items[i].str_id, target)) {
             _ = input.orderedRemove(i);
         }
-   }
+    }
 }

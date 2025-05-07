@@ -22,7 +22,7 @@ pub fn run_banner(allocator: std.mem.Allocator) !void {
     try stdout.print("{s}{s}{s}", .{ ansi_deep_orange, result.stdout, ansi_reset_orange });
 
     // Printing out the commands the program supports
-    const commands = "CMDS: * (add) | -done | -del | -clear | -show | -p | -x \n";
+    const commands = "CMDS: * (add) | -done | -del | -clear | -show | -p | -x | \n";
     try std.io.getStdOut().writer().print("{s}{s}{s}", .{ ansi_blue, commands, ansi_reset_blue });
     std.debug.print("\n", .{});
 }

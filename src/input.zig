@@ -111,11 +111,11 @@ fn display_file(file: std.fs.File, allocator: std.mem.Allocator) !void {
     defer allocator.free(bytes_read);
 
     try file.seekTo(0);
-    _ = try file.readAll(bytes_read);
-    try stdout.print("{s}", .{bytes_read});
+    const count = try file.readAll(bytes_read);
+    try stdout.writeAll(bytes_read[0..count]);
 }
 
-// Function primarly used for debugging, used to see what tasks are in notes_list
+// NOTE Debug function, used to see what tasks are in notes_list
 fn display_notes(input: *std.ArrayList(Notes)) !void {
     for (input.items) |note| {
         try note._display();

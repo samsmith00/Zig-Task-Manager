@@ -147,7 +147,7 @@ fn write_to_file(note_list: *std.ArrayList(Notes), should_truncate: u8) !void {
 // Prints the orange divider that marks the start of the notes
 fn print_divider() !void {
     var i: usize = 0;
-    while (i < 30) {
+    while (i < 40) {
         if (i % 2 == 0) {
             try stdout.print("\x1b[38;5;208m/\x1b[0m", .{});
         } else {

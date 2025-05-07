@@ -2,7 +2,6 @@ const std = @import("std");
 const banner = @import("banner.zig");
 const handle_input = @import("input.zig");
 const file_init = @import("initialize_txt_file.zig");
-
 const stdout = std.io.getStdOut().writer();
 
 /// Tasks to complete (for myself)
@@ -13,7 +12,6 @@ const stdout = std.io.getStdOut().writer();
 ///     2. make priority (some how to write to top of file)
 ///             - Loop through note list, if note less than target, continue if == target remove, if greater than target subtract 1 from id, update id_str
 ///     3. check off individual tasks ✅
-
 
 // Notes Struct
 pub const Notes = struct {
@@ -36,11 +34,11 @@ pub const Notes = struct {
     }
     // For debugging
     pub fn _display(self: Notes) !void {
-        try stdout.print("{d}. ", .{self.id});
+        try stdout.print("{d}. ",.{self.id});
         try stdout.print("{s} ", .{self.content});
         try stdout.print("{s} \n", .{if (self.status) "true" else "false"});
         try stdout.print("-------------------------------\n", .{});
-    } 
+    }
     // used before adding notes to the file to dispaly and save
     pub fn _format_for_file(self: Notes) ![]u8 {
         //const id_as_str = try std.fmt.allocPrint(self.allocator, "{d}", .{self.id});

@@ -12,6 +12,8 @@ const stdout = std.io.getStdOut().writer();
 ///     2. make priority (some how to write to top of file)
 ///             - Loop through note list, if note less than target, continue if == target remove, if greater than target subtract 1 from id, update id_str
 ///     3. check off individual tasks ✅
+/// 
+/// NOTE Make program accept command line arguments, able to show without actually running program etc.
 
 // Notes Struct
 pub const Notes = struct {
@@ -24,10 +26,11 @@ pub const Notes = struct {
     // Initialize all note stucts
     pub fn init(num: u32, str: []const u8, allocator: std.mem.Allocator, is_complete: bool) !Notes {
         const str_id = try std.fmt.allocPrint(allocator, "{d}", .{num});
+        const content_copy = try allocator.dupe(u8, str);
         return Notes{ 
             .id = num, 
             .str_id = str_id, 
-            .content = str, 
+            .content = content_copy, 
             .allocator = allocator, 
             .status = is_complete 
         };
@@ -43,7 +46,6 @@ pub const Notes = struct {
     pub fn _format_for_file(self: Notes) ![]u8 {
         //const id_as_str = try std.fmt.allocPrint(self.allocator, "{d}", .{self.id});
         var message_builder = std.ArrayList(u8).init(self.allocator);
-        defer message_builder.deinit();
 
         const status = if (self.status) "[X] " else "[ ] ";
         try message_builder.appendSlice(self.str_id);
@@ -58,6 +60,11 @@ pub const Notes = struct {
     // Used to change the status for a particular note. Allows for notes to be checked off
     pub fn change_status(self: *Notes, status: bool) void {
         self.status = status;
+    }
+
+    pub fn deinit(self: Notes) void{
+        self.allocator.free(self.str_id);
+        self.allocator.free(self.content);
     }
 };
 
@@ -74,4 +81,8 @@ pub fn main() !void {
     try banner.run_banner(allocator);
     // This is the entry point to the main functionalities to the program
     try handle_input.handle_input(allocator, &note_list);
+
+    for (note_list.items) |note| {
+        note.deinit();
+    }
 }

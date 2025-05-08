@@ -24,7 +24,7 @@ pub fn handle_input(allocator: std.mem.Allocator, note_list: *std.ArrayList(Note
     defer arg_set.deinit();
 
     // Loop that continuously accepts user input until -done keyword is used. Gave loop a label so we can directly break the loop
-    outer: while (true) {
+    check_args: while (true) {
         // getting the user input
         const input_buff = try stdin.readUntilDelimiterAlloc(allocator, '\n', 512);
         defer allocator.free(input_buff);
@@ -34,7 +34,8 @@ pub fn handle_input(allocator: std.mem.Allocator, note_list: *std.ArrayList(Note
         defer args.deinit();
 
         // Getting the exact args that the usere uses
-        const args_subset = try arg_set_path.create_subset(allocator, args);
+        var args_subset = try arg_set_path.create_subset(allocator, args);
+        defer args_subset.deinit();
 
         // String representation of the user's task
         const content = try remove_args(allocator, input_buff, arg_set);
@@ -45,7 +46,7 @@ pub fn handle_input(allocator: std.mem.Allocator, note_list: *std.ArrayList(Note
             // have to rework this because now file is being passed from main func
             for (args.items) |arg| {
                 if (std.mem.eql(u8, arg, "-done")) {
-                    break :outer;
+                    break :check_args;
                 } else if (std.mem.eql(u8, arg, "-show")) {
                     try write_to_file(note_list, 'N');
                     const show_file = try std.fs.cwd().openFile("notes.txt", .{ .mode = .read_only });
@@ -131,8 +132,8 @@ fn write_to_file(note_list: *std.ArrayList(Notes), should_truncate: u8) !void {
             const str = try note._format_for_file();
             try file.writeAll(str);
             defer note.allocator.free(str);
-            return;
         }
+            return;
     }
 
     var file = try file_init.notes_txt_init();
@@ -170,7 +171,7 @@ fn mark_task_as_done(input: *std.ArrayList(Notes), target: []const u8) !void {
     try write_to_file(input, 'N');
 }
 
-// Delet a specific note, indicate the note you want to delete by the number
+// Delete spicific taks in note_list
 fn delet_specific_task(input: *std.ArrayList(Notes), target: []const u8) !void {
     var i: usize = input.items.len;
     while (i > 0) {

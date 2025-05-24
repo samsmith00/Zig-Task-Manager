@@ -76,7 +76,7 @@ pub fn main() !void {
     const allocator = gpa.allocator();
     //defer _ = gpa.deinit();
 
-    var note_count: u32 = 2;
+    var note_count: u32 = 1;
 
     var arg_set = try valid_args.set(allocator);
     defer arg_set.deinit();
@@ -105,7 +105,12 @@ pub fn main() !void {
     {
         try banner.run_banner(allocator);
 
-        try to_json.read_json_notes(&note_list, allocator, &note_count);
+        const json_file_exists = try to_json.does_exist();
+
+        if (json_file_exists) 
+        {
+            try to_json.read_json_notes(&note_list, allocator, &note_count);
+        }
         // This is the entry point to the main functionalities to the program
         try handle_input.handle_input(allocator, &note_list, &note_count);
 

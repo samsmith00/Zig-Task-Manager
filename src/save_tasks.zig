@@ -5,8 +5,14 @@ const Notes = @import("main.zig").Notes;
 
 pub fn save_notes_as_json(list: *std.ArrayList(Notes), allocator: std.mem.Allocator) !void {
 
-    var file = try create_json_file();    
+    var file = create_json_file() catch |err| switch
+    (err) {
+        error.FileNotFound => return,
+        else => return err
+    };
+
     defer file.close();
+    
 
     const jsonStruct = struct 
     {
@@ -46,10 +52,25 @@ pub fn save_notes_as_json(list: *std.ArrayList(Notes), allocator: std.mem.Alloca
     try file.writeAll(jsonArray.items);
 }
 
+//------------------------------------ Helper Functions ------------------------------------
+
+
 fn create_json_file() !std.fs.File {
     const cwd = std.fs.cwd();
     return cwd.createFile("notes.json", .{.truncate = true });
 }
+
+pub fn does_exist() !bool {
+    _ = std.fs.cwd().openFile("notes.json", .{}) catch |err|
+    switch (err) {
+        error.FileNotFound => return false, 
+        else => return true
+    };
+    return true;
+}
+
+//------------------------------------------------------------------------------------------
+
 
 
 pub fn read_json_notes(note_list: *std.ArrayList(Notes), allocator: std.mem.Allocator, note_count: *u32) !void {
@@ -64,18 +85,13 @@ pub fn read_json_notes(note_list: *std.ArrayList(Notes), allocator: std.mem.Allo
     defer allocator.free(buff);
 
     _ = try json_file.readAll(buff);
-
-    // var lines = std.ArrayList([]const u8).init(allocator);
-    // defer lines.deinit();
     
-
     const parsed = try std.json.parseFromSlice(std.json.Value, allocator, buff, .{ .allocate = .alloc_always });
     defer parsed.deinit();
 
-    var highest_id: u32 = 0;
+    var highest_id: u32 = 1;
 
     for (parsed.value.array.items) |item| {
-        if (item != .object) continue;
 
         const id_temp = item.object.get("id").?.integer;
         const id = std.math.cast(u32, id_temp) orelse return error.IdOutOfRange;
@@ -95,27 +111,3 @@ pub fn read_json_notes(note_list: *std.ArrayList(Notes), allocator: std.mem.Allo
 
     note_count.* = highest_id + 1;
 }   
-
-
-// NOTE look at json documentation
-
-
-
-
-        // const note = try allocator.create(Notes);
-        // note.* = Notes {
-        //     .id = item.object.get("id").?.Integer,
-        //     .str_id = try allocator.dupe(u8, item.object.get("str_id").?.String),
-        //     .content = try allocator.dupe(u8, item.object.get("content").?.String),
-        //     .allocator = allocator,
-        //     .status = item.object.get("status").bool
-        // };
-        // try note_list.append(note.*);
-
-        // const id = item.get("id").?.Integer;
-        // const new_note = try Notes.init(
-        //     id, 
-        //     item.object.get("content").?.String,
-        //     allocator, 
-        //     false
-        // );

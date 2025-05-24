@@ -11,7 +11,7 @@ pub fn parse_input(allocator: std.mem.Allocator, input: []const u8) !std.ArrayLi
     var arg_set = try arg_set_path.set(allocator);
     defer arg_set.deinit();
 
-    // Break down the input (what the user typed into the terminal) into individual words
+    // Break down the input (what the user typed into the terminal into individual words
     var tokens = std.mem.tokenizeScalar(u8, input, ' ');
 
     var arg_list = std.ArrayList([]const u8).init(allocator);

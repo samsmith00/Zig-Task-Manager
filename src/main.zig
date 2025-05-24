@@ -2,6 +2,8 @@ const std = @import("std");
 const banner = @import("banner.zig");
 const handle_input = @import("input.zig");
 const file_init = @import("initialize_txt_file.zig");
+const valid_args = @import("arg_set.zig");
+const to_json = @import("save_tasks.zig");
 const stdout = std.io.getStdOut().writer();
 
 /// Tasks to complete (for myself)
@@ -14,7 +16,7 @@ const stdout = std.io.getStdOut().writer();
 ///     3. check off individual tasks ✅
 /// 
 /// NOTE Make program accept command line arguments, able to show without actually running program etc.
-
+/// accept -show, -add, -clear, for single use cases, make program more modular, breakup some more functions ect. 
 // Notes Struct
 pub const Notes = struct {
     id: u32,
@@ -24,11 +26,11 @@ pub const Notes = struct {
     status: bool,
 
     // Initialize all note stucts
-    pub fn init(num: u32, str: []const u8, allocator: std.mem.Allocator, is_complete: bool) !Notes {
-        const str_id = try std.fmt.allocPrint(allocator, "{d}", .{num});
+    pub fn init(id: u32, str: []const u8, allocator: std.mem.Allocator, is_complete: bool) !Notes {
+        const str_id = try std.fmt.allocPrint(allocator, "{d}", .{id});
         const content_copy = try allocator.dupe(u8, str);
         return Notes{ 
-            .id = num, 
+            .id = id, 
             .str_id = str_id, 
             .content = content_copy, 
             .allocator = allocator, 
@@ -72,17 +74,52 @@ pub fn main() !void {
     // Creating an allocator object I can pass around my program
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     const allocator = gpa.allocator();
+    //defer _ = gpa.deinit();
+
+    var note_count: u32 = 2;
+
+    var arg_set = try valid_args.set(allocator);
+    defer arg_set.deinit();
+
+    const args = try std.process.argsAlloc(allocator);
+    defer std.process.argsFree(allocator, args);
+
+    // std.debug.print("There are {d} args:\n", .{args.len});
+    // for(args) |arg| {
+    //     std.debug.print("  {s}\n", .{arg});
+    // }
+
+    if (args.len > 1)
+    {   
+         if (std.mem.eql(u8, args[1], "show"))
+        {
+            try handle_input.only_show_file(allocator);
+        }
+    }
 
     _ = try file_init.notes_txt_init();
     var note_list = std.ArrayList(Notes).init(allocator);
-
     defer note_list.deinit();
 
-    try banner.run_banner(allocator);
-    // This is the entry point to the main functionalities to the program
-    try handle_input.handle_input(allocator, &note_list);
+    if (args.len < 2)
+    {
+        try banner.run_banner(allocator);
 
-    for (note_list.items) |note| {
-        note.deinit();
+        try to_json.read_json_notes(&note_list, allocator, &note_count);
+        // This is the entry point to the main functionalities to the program
+        try handle_input.handle_input(allocator, &note_list, &note_count);
+
+        for (note_list.items) |note| {
+            note.deinit();
+        }
     }
+
+
 }
+
+// NOTE After doing zig run src/main.zig -- show, when you then go back in and run zig run src/main.zig ✅
+// any new note writes over top the current notes. Need to seek to end of file probalby ✅
+
+// NOTE Now the file continuse to write where it was left off. But the numbers are messed up, store note_count
+// in file somewhere, read it and set the note_count value to it somehow
+

@@ -7,6 +7,7 @@ const parse_input = @import("parse_input.zig");
 const arg_set_path = @import("arg_set.zig");
 const file_init = @import("initialize_txt_file.zig");
 const Notes = @import("main.zig").Notes;
+const to_json = @import("save_tasks.zig");
 const stdout = std.io.getStdOut().writer();
 
 // MAYBE WANT TO MAKE NOTE LIST IN MAIN FUNC AND PASS TO HERE
@@ -16,9 +17,8 @@ const stdout = std.io.getStdOut().writer();
 /// Make a note struct that has a note id and content
 /// hace a dynamic array that holds all of the notes this will be easy to delete and add to
 /// Need to make numbers reset when cleared, and right now black returns are considered notes, need to fix that
-pub fn handle_input(allocator: std.mem.Allocator, note_list: *std.ArrayList(Notes)) !void {
+pub fn handle_input(allocator: std.mem.Allocator, note_list: *std.ArrayList(Notes), note_count: *u32) !void {
     const stdin = std.io.getStdIn().reader();
-    var note_count: u32 = 1;
 
     var arg_set = try arg_set_path.set(allocator);
     defer arg_set.deinit();
@@ -42,40 +42,70 @@ pub fn handle_input(allocator: std.mem.Allocator, note_list: *std.ArrayList(Note
 
         if (content.len > 0 or args.items.len > 0) {
 
+            // NOTE clean up loop, make everything into their own functions
             // Loop to preform various actions based on the args
             // have to rework this because now file is being passed from main func
             for (args.items) |arg| {
-                if (std.mem.eql(u8, arg, "-done")) {
-                    break :check_args;
-                } else if (std.mem.eql(u8, arg, "-show")) {
-                    try write_to_file(note_list, 'N');
-                    const show_file = try std.fs.cwd().openFile("notes.txt", .{ .mode = .read_only });
-                    defer show_file.close();
-                    try print_divider();
-                    try display_file(show_file, allocator);
-                } else if (std.mem.eql(u8, arg, "-clear")) {
+                
+                if (std.mem.eql(u8, arg, "-s"))
+                {
+                    try write_and_show_container(note_list, allocator, false);
+                }
+                else if (std.mem.eql(u8, arg, "-show")) 
+                {
+                    try display_notes(note_list);
+                    try write_and_show_container(note_list, allocator, true);
+                } 
+                else if (std.mem.eql(u8, arg, "-clear")) 
+                {
                     try std.fs.cwd().deleteFile("notes.txt");
-                    note_list.clearRetainingCapacity();
-                    note_count = 1;
+                    try std.fs.cwd().deleteFile("notes.json");
+                    note_list.clearAndFree();
+                    note_count.* = 1;
                     //try stdout.print("{s}", .{"Deleated notes"});
-                } else if (std.mem.eql(u8, arg, "-x")) {
+                } 
+                else if (std.mem.eql(u8, arg, "-x")) 
+                {
                     var target = content;
                     target = std.mem.trimRight(u8, target, "\n\r");
                     _ = try mark_task_as_done(note_list, target);
-                } else if (std.mem.eql(u8, arg, "-del")) {
+                } 
+                else if (std.mem.eql(u8, arg, "-del")) 
+                {
                     var target = content;
                     target = std.mem.trimRight(u8, target, "\n\r");
                     try delet_specific_task(note_list, target);
                     try write_to_file(note_list, 'Y');
                 }
+                else if (std.mem.eql(u8, arg, "-done")) 
+                {
+                    //try write_and_show_container(note_list, allocator);
+                    if (note_list.items.len != 0) {
+                        try to_json.save_notes_as_json(note_list, allocator);
+                    }
+                    break :check_args;
+                }
             }
             // Making sure we do not add content to notes if it pertains to deleting or checking off notes
             const is_removed = if (args_subset.contains("-x") or args_subset.contains("-del")) true else false;
             if (content.len > 0 and !is_removed) {
-                const new_note = try Notes.init(note_count, content, allocator, false);
+                const id = note_count.*;
+                const new_note = try Notes.init(id, content, allocator, false);
                 _ = try note_list.append(new_note);
-                note_count += 1;
+                note_count.* += 1;
                 //try display_notes(note_list);
+
+
+
+                //  const new_note = try allocator.create(Notes);
+                // const str_id = try std.fmt.allocPrint(allocator, "{d}", .{note_count});
+                // new_note.* = Notes {
+                //     .id = note_count,
+                //     .str_id = str_id,
+                //     .content = content,
+                //     .allocator = allocator, 
+                //     .status = false
+                // };
             }
         }
     }
@@ -102,6 +132,14 @@ fn remove_args(allocator: std.mem.Allocator, input: []const u8, arg_set: std.Buf
     const string_to_add = try buff.toOwnedSlice();
 
     return string_to_add;
+}
+
+fn write_and_show_container(note_list: *std.ArrayList(Notes), allocator: std.mem.Allocator, flag: bool) !void {
+    try write_to_file(note_list, 'Y');
+
+    if (flag) {
+       try only_show_file(allocator);
+    }
 }
 
 // Function to display the file
@@ -133,12 +171,14 @@ fn write_to_file(note_list: *std.ArrayList(Notes), should_truncate: u8) !void {
             try file.writeAll(str);
             defer note.allocator.free(str);
         }
-            return;
+        return;
     }
 
     var file = try file_init.notes_txt_init();
     defer file.close();
 
+    const file_size = try file.getEndPos();
+    try file.seekTo(file_size);
     for (note_list.items) |note| {
         const str = try note._format_for_file();
         try file.writeAll(str);
@@ -168,7 +208,7 @@ fn mark_task_as_done(input: *std.ArrayList(Notes), target: []const u8) !void {
             //try note._display();
         }
     }
-    try write_to_file(input, 'N');
+    try write_to_file(input, 'Y');
 }
 
 // Delete spicific taks in note_list
@@ -180,4 +220,11 @@ fn delet_specific_task(input: *std.ArrayList(Notes), target: []const u8) !void {
             _ = input.orderedRemove(i);
         }
     }
+}
+
+pub fn only_show_file(allocator: std.mem.Allocator) !void {
+    const show_file = try std.fs.cwd().openFile("notes.txt", .{ .mode = .read_only });
+    defer show_file.close();
+    try print_divider();
+    try display_file(show_file, allocator);
 }

@@ -52,8 +52,8 @@ pub fn handle_input(allocator: std.mem.Allocator, note_list: *std.ArrayList(Note
                     try write_and_show_container(note_list, allocator, false);
                 }
                 else if (std.mem.eql(u8, arg, "-show")) 
-                {
-                    try display_notes(note_list);
+                {   
+                    //try display_notes(note_list); => for debugging
                     try write_and_show_container(note_list, allocator, true);
                 } 
                 else if (std.mem.eql(u8, arg, "-clear")) 

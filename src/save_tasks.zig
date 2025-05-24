@@ -64,7 +64,7 @@ pub fn does_exist() !bool {
     _ = std.fs.cwd().openFile("notes.json", .{}) catch |err|
     switch (err) {
         error.FileNotFound => return false, 
-        else => return true
+        else => return err
     };
     return true;
 }

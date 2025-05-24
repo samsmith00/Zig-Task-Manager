@@ -59,7 +59,12 @@ pub fn handle_input(allocator: std.mem.Allocator, note_list: *std.ArrayList(Note
                 else if (std.mem.eql(u8, arg, "-clear")) 
                 {
                     try std.fs.cwd().deleteFile("notes.txt");
-                    try std.fs.cwd().deleteFile("notes.json");
+                    
+                    const json_file_exists = try to_json.does_exist();
+                    if (json_file_exists)
+                    {
+                        try std.fs.cwd().deleteFile("notes.json");
+                    }
                     note_list.clearAndFree();
                     note_count.* = 1;
                     //try stdout.print("{s}", .{"Deleated notes"});

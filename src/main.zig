@@ -6,6 +6,9 @@ const valid_args = @import("arg_set.zig");
 const to_json = @import("save_tasks.zig");
 const stdout = std.io.getStdOut().writer();
 
+
+//---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
 /// Tasks to complete (for myself)
 ///     1. make delete notes function ✅
 ///     -----------------------------------------------------------------
@@ -18,6 +21,9 @@ const stdout = std.io.getStdOut().writer();
 /// NOTE Make program accept command line arguments, able to show without actually running program etc.
 /// accept -show, -add, -clear, for single use cases, make program more modular, breakup some more functions ect. 
 // Notes Struct
+//---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
 pub const Notes = struct {
     id: u32,
     str_id: []const u8,
@@ -84,10 +90,16 @@ pub fn main() !void {
     const args = try std.process.argsAlloc(allocator);
     defer std.process.argsFree(allocator, args);
 
+
+    //------------------------------------- Debug -------------------------------------
+
     // std.debug.print("There are {d} args:\n", .{args.len});
     // for(args) |arg| {
     //     std.debug.print("  {s}\n", .{arg});
     // }
+
+    //---------------------------------------------------------------------------------
+
 
     if (args.len > 1)
     {   
